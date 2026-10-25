@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Attendance Analysis &amp; Recovery Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top App Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">&#128202;</span>
+        <div>
+          <h1 class="brand-title">Smart Attendance Analysis &amp; Recovery Simulator</h1>
+          <span class="brand-badge">Rule-Based Mathematical Analytics</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button id="btn-demo-data" class="btn btn-secondary btn-sm" title="Populate with realistic sample data">
+          &#128229; Load Demo Data
+        </button>
+        <button id="btn-clear-all" class="btn btn-outline-danger btn-sm" title="Remove all stored subjects">
+          &#128465; Clear All
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Demo Data Notification Banner -->
+  <div id="demo-banner" class="demo-banner" role="status">
+    <div class="banner-inner">
+      <span>&#8505;&#65039; <strong>Sample Demo Data Active:</strong> The records shown below are realistic sample entries for demonstration. You can add, edit, or clear records anytime.</span>
+      <button id="btn-dismiss-banner" class="btn-icon" aria-label="Dismiss banner">&times;</button>
+    </div>
+  </div>
+
+  <main class="app-main">
+    <!-- Overall Dashboard KPI Summary -->
+    <section class="dashboard-overview" aria-label="Overall Attendance Summary">
+      <div class="kpi-card">
+        <span class="kpi-label">Overall Attendance</span>
+        <div class="kpi-value-row">
+          <span id="kpi-overall-pct" class="kpi-value">--%</span>
+          <span id="kpi-overall-status" class="badge">Calculating</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="kpi-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Cumulative Classes</span>
+        <div class="kpi-value-row">
+          <span id="kpi-classes-count" class="kpi-value">0 / 0</span>
+        </div>
+        <span class="kpi-subtext">Total attended across all subjects</span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Subjects At Risk</span>
+        <div class="kpi-value-row">
+          <span id="kpi-risk-count" class="kpi-value text-danger">0</span>
+          <span class="kpi-subtext">below required target</span>
+        </div>
+        <span id="kpi-safe-count" class="kpi-subtext">0 subjects safe</span>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-label">Active Target Policy</span>
+        <div class="kpi-value-row">
+          <span id="kpi-active-target" class="kpi-value">75%</span>
+        </div>
+        <span class="kpi-subtext">Configurable per subject or global</span>
+      </div>
+    </section>
+
+    <!-- Main Workspace: Subject Manager (Left) & Analytics/Simulator (Right) -->
+    <div class="workspace-grid">
+      <!-- Left Column: Subjects & Input Form -->
+      <section class="panel subject-panel" aria-labelledby="subjects-heading">
+        <div class="panel-header">
+          <h2 id="subjects-heading">Subjects &amp; Courses</h2>
+          <button id="btn-toggle-form" class="btn btn-primary btn-sm">
+            <span id="form-toggle-icon">+</span> Add Subject
+          </button>
+        </div>
+
+        <!-- Subject Entry / Edit Form (Collapsible) -->
+        <form id="subject-form" class="subject-form" novalidate>
+          <h3 id="form-title">Add New Subject</h3>
+          <input type="hidden" id="form-edit-id" value="">
+
+          <div class="form-group">
+            <label for="input-subject-name">Subject / Course Name <span class="required">*</span></label>
+            <input type="text" id="input-subject-name" class="form-control" placeholder="e.g. Computer Networks" required maxlength="60">
+            <span id="err-subject-name" class="form-error"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="input-classes-attended">Classes Attended <span class="required">*</span></label>
+              <input type="number" id="input-classes-attended" class="form-control" min="0" step="1" placeholder="e.g. 21" required>
+              <span id="err-classes-attended" class="form-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="input-classes-total">Total Conducted <span class="required">*</span></label>
+              <input type="number" id="input-classes-total" class="form-control" min="1" step="1" placeholder="e.g. 28" required>
+              <span id="err-classes-total" class="form-error"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-target-pct">Target Attendance (%) <span class="required">*</span></label>
+            <div class="target-preset-row">
+              <input type="number" id="input-target-pct" class="form-control" min="1" max="100" step="1" value="75" required>
+              <div class="preset-buttons" role="group" aria-label="Target Presets">
+                <button type="button" class="btn-preset" data-preset="75">75%</button>
+                <button type="button" class="btn-preset" data-preset="80">80%</button>
+                <button type="button" class="btn-preset" data-preset="85">85%</button>
+              </div>
+            </div>
+            <span id="err-target-pct" class="form-error"></span>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="btn-save-subject" class="btn btn-primary">Save Subject</button>
+            <button type="button" id="btn-cancel-edit" class="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+        <!-- Subjects List -->
+        <div id="subject-list" class="subject-list" role="list">
+          <!-- Dynamically populated via script.js -->
+        </div>
+      </section>
+
+      <!-- Right Column: In-Depth Subject Analytics & Recovery Engine -->
+      <section class="panel analytics-panel" aria-labelledby="analytics-heading">
+        <div class="panel-header">
+          <div>
+            <h2 id="analytics-heading">Attendance Analysis &amp; Recovery Engine</h2>
+            <p id="selected-subject-subtitle" class="panel-subtitle">Select a subject on the left to inspect detailed metrics.</p>
+          </div>
+        </div>
+
+        <div id="analytics-content" class="analytics-content">
+          <!-- Current Standing Card -->
+          <div class="detail-card standing-card">
+            <div class="standing-header">
+              <div>
+                <span class="eyebrow">Current Standing</span>
+                <h3 id="detail-subject-name" class="detail-title">Select Subject</h3>
+              </div>
+              <span id="detail-status-badge" class="badge badge-lg">--</span>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric-box">
+                <span class="metric-label">Current Attendance</span>
+                <span id="detail-current-pct" class="metric-value">0.0%</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Target Required</span>
+                <span id="detail-target-pct" class="metric-value">75%</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Classes Attended / Held</span>
+                <span id="detail-attended-fraction" class="metric-value">0 / 0</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Threshold Delta</span>
+                <span id="detail-delta-pct" class="metric-value">0.0%</span>
+              </div>
+            </div>
+
+            <div class="progress-bar-container-lg">
+              <div id="detail-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+              <div id="detail-target-marker" class="target-marker" style="left: 75%;" title="Target threshold"></div>
+            </div>
+            <div class="target-marker-legend">
+              <span>0%</span>
+              <span id="marker-legend-text">Target: 75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <!-- Recovery Calculation Box -->
+          <div class="detail-card recovery-card">
+            <h3 class="section-title">&#128200; Mathematical Recovery Strategy</h3>
+            <p class="section-desc">Calculated using linear attendance threshold equations without approximations.</p>
+
+            <div id="recovery-result-box" class="recovery-result-box">
+              <!-- Dynamically populated (Consecutive classes required OR safe absence allowance) -->
+            </div>
+
+            <!-- Milestone Benchmark Matrix -->
+            <div class="milestones-container">
+              <h4 class="milestone-title">Benchmark Threshold Requirements</h4>
+              <div id="benchmark-cards" class="benchmark-grid">
+                <!-- Dynamically generated benchmark tiles for 65%, 75%, 80%, 85%, 90% -->
+              </div>
+            </div>
+          </div>
+
+          <!-- What-If Future Simulator -->
+          <div class="detail-card simulator-card">
+            <div class="simulator-header">
+              <div>
+                <h3 class="section-title">&#128302; Future Scenario Simulator</h3>
+                <p class="section-desc">Simulate how attending or missing upcoming lectures impacts your future percentage.</p>
+              </div>
+            </div>
+
+            <div class="simulator-controls">
+              <div class="sim-row">
+                <div class="form-group sim-input-group">
+                  <label for="sim-upcoming-total">Upcoming Lectures to Simulate:</label>
+                  <input type="number" id="sim-upcoming-total" class="form-control" value="10" min="1" max="100" step="1">
+                </div>
+
+                <div class="form-group sim-slider-group">
+                  <div class="slider-label-row">
+                    <label for="sim-upcoming-attended">Lectures You Will Attend:</label>
+                    <span id="sim-attended-display" class="slider-val-badge">8 / 10 (80%)</span>
+                  </div>
+                  <input type="range" id="sim-upcoming-attended" class="range-slider" min="0" max="10" value="8" step="1">
+                  <div class="range-bounds">
+                    <span>0 (Miss All)</span>
+                    <span id="sim-half-marker">5</span>
+                    <span id="sim-max-marker">10 (Attend All)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Scenario Buttons -->
+              <div class="quick-scenarios" role="group" aria-label="Quick Scenarios">
+                <span class="quick-label">Quick Presets:</span>
+                <button type="button" class="btn btn-xs btn-outline" id="preset-attend-all">100% Attendance</button>
+                <button type="button" class="btn btn-xs btn-outline" id="preset-attend-target">Target Pace</button>
+                <button type="button" class="btn btn-xs btn-outline" id="preset-miss-all">0% (Miss All)</button>
+              </div>
+            </div>
+
+            <!-- Simulation Result Card -->
+            <div id="sim-projection-output" class="sim-projection-output">
+              <div class="projection-stats">
+                <div class="stat-pill">
+                  <span class="pill-label">Projected Total</span>
+                  <span id="proj-classes" class="pill-val">0 / 0</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="pill-label">Projected %</span>
+                  <span id="proj-percentage" class="pill-val">0.0%</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="pill-label">Net Change</span>
+                  <span id="proj-change" class="pill-val">0.0%</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="pill-label">Projected Status</span>
+                  <span id="proj-status" class="badge">--</span>
+                </div>
+              </div>
+              <p id="proj-summary-text" class="sim-summary-text"></p>
+            </div>
+          </div>
+
+          <!-- Rule-Based Academic Advisory -->
+          <div class="detail-card advisory-card">
+            <h3 class="section-title">&#128221; Rule-Based Academic Recommendations</h3>
+            <div id="advisory-content" class="advisory-list">
+              <!-- Dynamically populated recommendations -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state placeholder when no subject exists -->
+        <div id="analytics-empty" class="analytics-empty" style="display: none;">
+          <div class="empty-graphic">&#128218;</div>
+          <h3>No Subjects Available</h3>
+          <p>Add a subject using the form on the left or click <strong>Load Demo Data</strong> to explore simulator calculations.</p>
+          <button id="btn-empty-demo" class="btn btn-primary">Load Sample Data</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p><strong>Smart Attendance Analysis &amp; Recovery Simulator</strong> &mdash; College Academic Research Project.</p>
+      <p class="footer-subtext">Deterministic mathematical modeling engine. No artificial intelligence, third-party trackers, or cloud databases utilized.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
